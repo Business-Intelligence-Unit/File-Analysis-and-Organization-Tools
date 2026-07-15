@@ -41,10 +41,10 @@ The main app is built to handle massive folders without crashing. It comes in tw
 A helper tool that safely adds missing classification codes to your main rulebook (`FBCRS_Master_Full.xlsx`).
 
 
-**Smart Matching:** It automatically finds the right column name to prevent duplicating data.
+*Smart Matching:** It automatically finds the right column name to prevent duplicating data.
 
 
-**Safe Updating:** It safely adds new information or new rows to the bottom without altering your existing notes or other columns.
+*Safe Updating:** It safely adds new information or new rows to the bottom without altering your existing notes or other columns.
 
 
 
