@@ -1,99 +1,141 @@
-
-# File Analysis and Organization Tools
+# FBCRS Record Inventory & File Analysis Tools
 
 ## Overview
 
-These tools help organize and track the files. The main program looks through the computer or network folders, reads different types of documents, automatically sorts them based on your rules, and creates a Excel summary report.
+This repository contains a suite of Python utilities designed to function as a full-featured Information Governance and Records Management engine. The primary application scans local or network directories, reads various document types, automatically categorizes them based on record retention rules, and generates a formatted Excel summary report.
+
 ---
 
 ## Core Components
 
 ### 1. File Analysis App
 
-The main app is built to handle massive folders without crashing. It comes in two versions:
+The main application is designed to handle massive file directories with built-in crash resilience. It is available in two distinct processing modes:
 
-**Slow but Accurate Version:** Reads every single file from start to finish and checks a unique digital signature to guarantee it finds exact duplicates.
-
-
-**Fast but Less Accurate Version:** Speeds through large folders. It runs faster by only reading the first two pages of PDFs, the first two slides of PowerPoints, the first 50 paragraphs of Word documents, the first Excel sheet, and just the first part of a file to check for duplicates.
-
-
-
-### Key Features
-
-**High Speed:** Scans multiple files at the same time and uses a fast search method to find keywords quickly.
-
-
-**Crash Protection:** Saves your progress row-by-row into a temporary file (`_temp.csv`) as it works. If the app closes unexpectedly, your progress is saved, and it will combine everything for you the next time it finishes.
-
-
-**Skips Errors:** If it finds a corrupted file, a locked document, or a file path that is too long for Windows, it simply logs it as an "Error" and moves to the next file instead of crashing.
-
-
-**Clean Excel Output:** The final Excel report includes clickable links to your files and dropdown menus to keep your data clean and easy to review.
-
-
-
----
-
-### 2. Excel Rulebook Updater
-
-A helper tool that safely adds missing classification codes to your main rulebook (`FBCRS_Master_Full.xlsx`).
-
-
-*Smart Matching:** It automatically finds the right column name to prevent duplicating data.
-
-
-*Safe Updating:** It safely adds new information or new rows to the bottom without altering your existing notes or other columns.
-
-
-
----
-
-## Setup (For Python Users)
-
-If you are running the code directly, you need Python 3.10 or newer. Install the required add-ons using your command prompt:
-
-**`openpyxl`**: For reading and writing Excel files.
-
-
-**`pypdf`, `python-docx`, `python-pptx**`: For reading PDFs, Word, and PowerPoint files.
-
-
-**`pyahocorasick`**: Highly recommended to make the keyword search much faster.
-
-
-**`pandas`**: Used for updating the rulebook.
-
-
-
----
-
-## Ready-to-Use Windows App (For Regular Users)
-
-You can turn the code into a standard Windows app (`.exe`) so others can use it without having to install Python.
-
-### How to Build the App
-
-1. Install the building tool: `python -m pip install pyinstaller`.
-
-
-2. Run the build command in your terminal (do not put this inside your Python file): `python -m PyInstaller --onefile "C:\Path\To\Your\Script.py"`.
-
-
-3. When it says "completed successfully," you will find your ready-to-use `.exe` app in a folder named `dist` (or on your Desktop).
-
-
-
----
-
-## Notes for the User
-
-**Background Process:** The app opens a black screen while it runs, which is normal and must stay open for the app to work.
-
-
-**Crucial Rule:** The main rulebook file (`FBCRS_Master_Full.xlsx`) must stay in the exact same folder as the app.
+* 
+**Slow but Accurate Version:** Processes complete files and generates full hash fingerprints for absolute duplicate validation.
 
 
 * 
-**Live Updates:** Because the files sit next to each other, you can easily change the rules or keywords in Excel at any time, and the app will instantly use those new rules the next time you run it.
+**Fast but Less Accurate Version:** Optimized to scan large data drops quickly. It achieves this by reading only the first two pages of PDFs, the first two slides of PowerPoints, the first 50 paragraphs of Word documents, the first Excel sheet, and only the first 1 MB of a file for duplicate checking .
+
+
+
+**Key Features:**
+
+* 
+**High Performance:** Utilizes `ThreadPoolExecutor` for concurrent I/O processing and the `pyahocorasick` automaton to reduce algorithmic classification complexity, significantly speeding up large record volume scans.
+
+
+* 
+**Crash Recovery (Checkpointing):** Features an incremental saving design that writes every processed row to a temporary CSV file (`_temp.csv`) in real-time. If the script crashes, data processed up to that exact moment is safely retained and automatically combined upon a successful restart.
+
+
+* 
+**Graceful Error Handling:** Includes `try...except` blocks around metadata retrieval to handle inaccessible files, corrupted paths, or Windows UNC network paths that exceed the 260-character limit. The app logs an "Error" row and proceeds rather than terminating the process.
+
+
+* 
+**Standardized Output:** Integrates Data Validation in the final Excel output, enforcing standardized dropdown menus for downstream auditing and applying clickable file hyperlinks.
+
+
+
+### 2. Master Code Updater
+
+A supplementary utility designed to safely update the live rulebook, `FBCRS_Master_Full.xlsx`, with missing Business Intelligence FBCRS codes.
+
+* 
+**Dynamic Column Matching:** It searches the Excel file for the first column's actual name to map data correctly, preventing duplication.
+
+
+* 
+**Safe Updating:** Utilizes the `.update()` function to inject new BI descriptions for existing codes or append new rows securely at the bottom. This ensures that existing, unrelated columns (like "Notes" or "Owner") are left completely untouched.
+
+
+
+---
+
+## Deployment & Usage Instructions
+
+### For End-Users (Using the .exe)
+
+1. 
+**Keep Files Together:** Ensure the `FBCRS_Master_Full.xlsx` library file is located in the exact same folder as the `.exe` application.
+
+
+* 
+**Rulebook Requirement:** The app will fail to start if the rulebook is not in the same folder.
+
+
+* **Keep the Excel File Closed:** Please ensure the `FBCRS_Master_Full.xlsx` file is closed before launching the application. If the file is open, the app may be unable to access the data, which can cause the scan to fail.
+
+
+
+
+2. **Launch the App:** Double-click the `.exe` file. A black window will appear—this is the application engine. Keep this window open until the process is complete.
+
+
+3. 
+**Initiate Scan:** When prompted in the black window, type `Y` to start the analysis or `N` to exit.
+
+
+4. **Selection:** A window will pop up asking you to select a folder. Choose the directory you wish to scan and click "OK".
+
+
+5. 
+**Monitoring Progress:** You can follow the progress of the analysis directly in the terminal window.
+
+
+6. 
+**Completion:** Once the process finishes, the app will display a success message and ask if you wish to run another folder.
+
+
+
+### Troubleshooting
+
+* **"Permission Denied" Errors:** Ensure the `_temp.csv` file or the final Excel report is not currently open in another program. Close all related Office applications and try again.
+
+
+* 
+**Performance:** For very large network drives, we recommend dividing your files into smaller sub-folders and scanning them one at a time for the best performance.
+
+
+* 
+**Long Path Errors:** If the scan skips files due to "path length" issues, ensure your system is optimized for long file paths.
+
+
+
+---
+
+## Future Versions & Potential Upgrades
+
+We are actively looking to expand the capabilities of this system. Future updates may include:
+
+* 
+**Empty Folder Skip:** A feature to automatically identify and skip empty directories to increase scanning speed.
+
+
+* **Advanced Reporting:** Integration of automated "Summary Charts" within the Excel output to visualize record retention health.
+* **Email Integration:** A feature to automatically flag records due for immediate disposition via automated email alerts.
+
+---
+
+## Installation & Setup (Developers)
+
+If you are running the tools directly via Python, ensure you have **Python 3.10 or higher** installed and added to your system PATH.
+
+Install all necessary dependencies via your terminal:
+
+```bash
+pip install pandas openpyxl pypdf python-docx python-pptx pyahocorasick
+
+```
+
+To build a standalone executable:
+
+```bash
+python -m PyInstaller --onefile "YourScript.py"
+
+```
+
+Note: Ensure the `FBCRS_Master_Full.xlsx` file is kept in the same directory as the generated `.exe`.
