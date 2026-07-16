@@ -18,7 +18,7 @@ The main application is designed to handle massive file directories with built-i
 
 > 2. Fast but Less Accurate Version:** Optimized to scan large data drops quickly. It achieves this by reading only the first two pages of PDFs, the first two slides of PowerPoints, the first 50 paragraphs of Word documents, the first Excel sheet, and only the first 1 MB of a file for duplicate checking .
 
-
+Download from here: https://drive.google.com/drive/folders/1g6KLtQcnfPhqmutzaZvUmluPHNbZemVf?usp=sharing
 
 **Key Features:**
 
