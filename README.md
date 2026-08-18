@@ -52,19 +52,12 @@ Read this section before acting on any output.
 Every action in the report is a *recommendation* for a human to approve. Nothing
 happens to your documents.
 
-**It is not a substitute for professional records judgement.** The engine matches
-keywords. It has no understanding of context, business purpose, legal hold, or
-whether a document is the official record or somebody's working copy.
-
 **`DESTROY` is a suggestion, never an instruction.** Do not run a bulk deletion
 from this report. Every destroy recommendation needs review by someone with the
 authority to approve disposition.
 
 **It does not detect near-duplicates.** Only byte-for-byte identical files. Two
 versions of the same document with a one-word change are treated as unrelated.
-
-**Confidence is not accuracy.** "Very High" means the engine found strong keyword
-evidence. Strong evidence can still point at the wrong series.
 
 ---
 
@@ -76,8 +69,9 @@ Two files, **in the same folder**:
 
 ```
 C:\FBCRS\
-├── FBCRS_Record_Inventory_V8_5.py     (or FBCRS_Analyzer.exe)
-└── FBCRS_Master_Full.xlsx             (the classification rulebook)
+├── FBCRS_Analyzer.exe          (the application)
+├── FBCRS_Master_Full.xlsx      (the classification rulebook)
+└── repair_rulebook.exe         (rulebook checker - optional)
 ```
 
 The rulebook **must** be named exactly `FBCRS_Master_Full.xlsx` and **must** sit
@@ -131,7 +125,8 @@ is displayed in small grey text at the bottom of the window.
 1. **Close the rulebook.** `FBCRS_Master_Full.xlsx` must not be open in Excel.
    Excel locks the file and the program will refuse to start.
 
-2. **Launch.** Double-click the `.exe`, or run:
+2. **Launch.** Double-click `FBCRS_Analyzer.exe`. If you are running from source
+   instead, use:
    ```
    python C:\FBCRS\FBCRS_Record_Inventory_V8_5.py
    ```
@@ -472,17 +467,42 @@ section 12.
 
 ### 10.4 Auditing the rulebook
 
-`repair_rulebook.py` checks a rulebook and reports problems:
+`repair_rulebook.exe` checks a rulebook and reports problems.
+
+**Double-click it.** A file dialog opens — select the rulebook you want checked.
+The findings appear in a console window, which stays open until you press Enter.
+
+You can also pass the path directly if you prefer:
 
 ```
-python repair_rulebook.py "C:\FBCRS\FBCRS_Master_Full.xlsx"
+repair_rulebook.exe "C:\FBCRS\FBCRS_Master_Full.xlsx"
 ```
 
-It reports corrupt Synonyms entries, keywords shared across too many series to be
-useful, and how many of your keywords are genuinely distinctive. It writes a
-cleaned copy as `..._REPAIRED.xlsx` and **never modifies the original**. Records,
-Keywords, and Phrases are copied through untouched; only the Synonyms sheet is
-repaired.
+### What it reports
+
+- **Corrupt Synonyms entries** — multi-line or overlong replacement values, the
+  fault that makes every file classify as the same code
+- **Over-shared keywords** — terms claimed by so many series that they carry no
+  signal, listed worst first
+- **Over-shared phrases** — the same problem in the Phrases sheet
+- **How many keywords are genuinely distinctive** — owned by exactly one series.
+  This is the single best measure of rulebook health
+
+### What it writes
+
+Two files, beside the rulebook you selected:
+
+| File | Contents |
+|---|---|
+| `<name>_REPAIRED.xlsx` | The cleaned rulebook — **use this one** |
+| `<name>_AUDIT.txt` | The full report, saved so you can keep or circulate it |
+
+**The original is never modified.** Records, Keywords, and Phrases are copied
+through untouched; only the Synonyms sheet is repaired, and anything removed from
+it is moved to a `FunctionCodes` sheet rather than deleted, so nothing is lost.
+
+To put a repaired rulebook into service, rename it to `FBCRS_Master_Full.xlsx`
+and place it beside `FBCRS_Analyzer.exe`.
 
 Run this whenever you make significant rulebook edits, and any time
 classification quality drops.
@@ -557,7 +577,7 @@ A corrupt **Synonyms** sheet. If a synonym's replacement value contains multiple
 lines or a long block of text, that block gets injected into every document the
 engine reads, so every file matches the same series.
 
-Run `repair_rulebook.py` (section 10.4) and use the repaired copy. Verify by
+Run `repair_rulebook.exe` (section 10.4) and use the repaired copy. Verify by
 checking the **Confidence Reason** column — if unrelated files all claim to match
 the same phrase, this is the cause.
 
@@ -599,13 +619,26 @@ partial results survive there and can be opened in Excel.
 ```
 pip install pyinstaller
 cd /d C:\FBCRS
+```
+
+**The main application** — `--windowed` suppresses the console, since it has its
+own interface:
+
+```
 pyinstaller --onefile --windowed --name FBCRS_Analyzer FBCRS_Record_Inventory_V8_5.py
 ```
 
-The result appears in `C:\FBCRS\dist\FBCRS_Analyzer.exe`.
+**The rulebook checker** — `--console` here, *not* `--windowed`, because its
+output is the console window. Build it windowed and the findings go nowhere:
 
-If it builds but crashes on launch with a `customtkinter` path error, rebuild with
-`--collect-all customtkinter` added.
+```
+pyinstaller --onefile --console --name repair_rulebook repair_rulebook.py
+```
+
+Both results appear in `C:\FBCRS\dist\`.
+
+If `FBCRS_Analyzer.exe` builds but crashes on launch with a `customtkinter` path
+error, rebuild it with `--collect-all customtkinter` added.
 
 ### 13.2 Packaging for colleagues
 
@@ -614,9 +647,10 @@ keywords without rebuilding. Ship a folder:
 
 ```
 FBCRS_Analyzer\
-├── FBCRS_Analyzer.exe
-├── FBCRS_Master_Full.xlsx
-└── FBCRS_User_Manual.pdf
+├── FBCRS_Analyzer.exe          (the application)
+├── FBCRS_Master_Full.xlsx      (the rulebook)
+├── repair_rulebook.exe         (rulebook checker)
+└── FBCRS_User_Manual.pdf       (this manual)
 ```
 
 Zip it. Tell recipients to unzip it and keep the files together — the exe cannot
@@ -736,15 +770,24 @@ automatically extends the corresponding Excel dropdown.
 
 | File | Purpose |
 |---|---|
-| `FBCRS_Record_Inventory_V8_5.py` | The application |
+| `FBCRS_Analyzer.exe` | The application |
 | `FBCRS_Master_Full.xlsx` | Classification rulebook — must sit beside the app |
-| `repair_rulebook.py` | Rulebook auditor and Synonyms repair tool |
+| `repair_rulebook.exe` | Rulebook checker and Synonyms repair tool |
+
+Source files, if you are running or rebuilding from Python rather than the exes:
+
+| File | Builds |
+|---|---|
+| `FBCRS_Record_Inventory_V8_5.py` | `FBCRS_Analyzer.exe` |
+| `repair_rulebook.py` | `repair_rulebook.exe` |
 
 ### Generated output
 
 | Location | Contents |
 |---|---|
 | `Documents\FBCRS_Reports\<folder> summary <timestamp>.xlsx` | The report |
+| `<rulebook>_REPAIRED.xlsx` | Cleaned rulebook from `repair_rulebook.exe` |
+| `<rulebook>_AUDIT.txt` | Rulebook audit report |
 | `Documents\FBCRS_Reports\<folder>_<timestamp>_temp.csv` | Checkpoint; deleted on success, survives a crash |
 | `Documents\FBCRS_Reports\FBCRS_error_log.txt` | Technical error log, appended to |
 
